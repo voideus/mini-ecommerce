@@ -16,6 +16,8 @@ import (
 
 func RunAPI(address string) error {
 	userHandler := handler.NewUserHandler()
+	productHandler := handler.NewProductHandler()
+	orderHandler := handler.NewOrderHandler()
 
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn: os.Getenv("SENTRY_DSN"),
@@ -69,6 +71,20 @@ func RunAPI(address string) error {
 		userProtectedRoutes.GET("/", userHandler.GetAllUser)
 		userProtectedRoutes.GET("/:id", userHandler.GetUser)
 		userProtectedRoutes.GET("/:id/products", userHandler.GetProductOrdered)
+	}
+
+	productRoutes := apiRoutes.Group("/products", middleware.AuthorizeJWT())
+	{
+		productRoutes.GET("/", productHandler.GetAllProduct)
+		productRoutes.GET("/:id", productHandler.GetProduct)
+		productRoutes.POST("/", productHandler.AddProduct)
+		productRoutes.PUT("/:id", productHandler.UpdateProduct)
+		productRoutes.DELETE("/:id", productHandler.DeleteProduct)
+	}
+
+	orderRoutes := apiRoutes.Group("/order", middleware.AuthorizeJWT())
+	{
+		orderRoutes.POST("/product/:product/quantity/:quantity", orderHandler.OrderProduct)
 	}
 
 	return app.Run(address)
